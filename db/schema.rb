@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_07_000003) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_15_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -20,6 +20,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_07_000003) do
     t.string "webhook_token"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "timezone"
+    t.time "business_hours_start"
+    t.time "business_hours_end"
+    t.boolean "weekend_business_hours", default: false, null: false
+    t.string "overnight_number"
     t.index ["webhook_token"], name: "index_accounts_on_webhook_token", unique: true
   end
 
