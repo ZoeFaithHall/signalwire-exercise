@@ -1,0 +1,65 @@
+<% content_for :title, "Set up your line" %>
+
+<div class="card">
+  <h1>Set up your phone line</h1>
+
+  <ol class="steps">
+    <li class="<%= "current" if @step == :search %> <%= "done" if @step == :forwarding %>">1 · Choose a number</li>
+    <li class="<%= "current" if @step == :forwarding %>">2 · Set forwarding</li>
+  </ol>
+
+  <% unless SignalwireClient.configured? %>
+    <div class="flash flash-alert">
+      The phone service isn't configured yet. Add your provider credentials to
+      <code>.env</code> (see <code>.env.example</code>), then restart.
+    </div>
+  <% end %>
+
+  <% if @step == :search %>
+    <h2>1 · Choose a phone number</h2>
+    <p class="muted">Search for an available number and buy it.</p>
+
+    <%= form_with url: onboarding_search_path, method: :post, class: "inline-form" do %>
+      <%= text_field_tag :area_code, params[:area_code], placeholder: "Area code, e.g. 212", class: "input small" %>
+      <%= submit_tag "Search", class: "btn" %>
+    <% end %>
+
+    <% if @available_numbers.present? %>
+      <table class="table">
+        <thead><tr><th>Number</th><th>Region</th><th>Capabilities</th><th></th></tr></thead>
+        <tbody>
+          <% @available_numbers.each do |number| %>
+            <% e164 = number["number"].presence || number["e164"] %>
+            <tr>
+              <td class="mono"><%= number["national_number_formatted"].presence || e164 %></td>
+              <td><%= number["region"].presence || number["city"] %></td>
+              <td class="muted"><%= number_capabilities(number["capabilities"]) %></td>
+              <td>
+                <%= form_with url: onboarding_purchase_path, method: :post do %>
+                  <%= hidden_field_tag :number, e164 %>
+                  <%= hidden_field_tag :area_code, params[:area_code] %>
+                  <%= submit_tag "Buy & use", class: "btn small" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% elsif @searched %>
+      <p class="muted">No numbers found for that area code. Try another.</p>
+    <% end %>
+
+  <% else %>
+    <h2>2 · Set your forwarding number</h2>
+    <p class="muted">
+      Calls to <strong class="mono"><%= @phone_number.e164 %></strong> will ring through to the number below.
+    </p>
+
+    <%= form_with url: onboarding_forwarding_path, method: :post do %>
+      <label for="forwarding_number">Forward calls to (E.164)</label>
+      <%= telephone_field_tag :forwarding_number, nil, id: "forwarding_number",
+            placeholder: "+15551234567", class: "input" %>
+      <%= submit_tag "Finish setup", class: "btn" %>
+    <% end %>
+  <% end %>
+</div>

@@ -1,0 +1,44 @@
+<% content_for :title, "Dashboard" %>
+
+<div class="grid">
+  <section class="card">
+    <h2>Your line</h2>
+    <div class="bignum mono"><%= @phone_number.e164 %></div>
+
+    <%= form_with url: forwarding_path, method: :patch, class: "inline-form" do %>
+      <label for="forwarding_number">Forwards to</label>
+      <%= telephone_field_tag :forwarding_number, account.forwarding_number,
+            id: "forwarding_number", placeholder: "+15551234567", class: "input" %>
+      <%= submit_tag "Update", class: "btn small" %>
+    <% end %>
+    <p class="muted small">Changing this takes effect immediately.</p>
+  </section>
+
+  <section class="card wide">
+    <h2>Recent calls</h2>
+    <% if @recent_calls.any? %>
+      <table class="table">
+        <thead><tr><th>When</th><th>From</th><th>To</th><th>Forwarded to</th><th>Status</th></tr></thead>
+        <tbody>
+          <% @recent_calls.each do |call| %>
+            <tr>
+              <td><%= call.created_at.strftime("%b %-d, %-l:%M %p %Z") %></td>
+              <td class="mono"><%= call.from %></td>
+              <td class="mono"><%= call.to %></td>
+              <td class="mono"><%= call.forwarded_to %></td>
+              <td><span class="badge <%= call.status == "forwarded" ? "ok" : "warn" %>"><%= call.status %></span></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="muted">No calls yet. Call <strong class="mono"><%= @phone_number.e164 %></strong> to test forwarding.</p>
+    <% end %>
+  </section>
+
+  <section class="card wide danger">
+    <h2>Danger zone</h2>
+    <p class="muted">Release this number and set up a new one.</p>
+    <%= button_to "Release number", release_phone_number_path, method: :post, class: "btn danger" %>
+  </section>
+</div>

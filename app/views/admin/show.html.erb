@@ -1,0 +1,33 @@
+<% content_for :title, "Admin" %>
+
+<div class="grid">
+  <section class="card wide">
+    <h2>Inbound call routing</h2>
+    <p class="muted small">
+      How calls reach this app. The public URL is an ephemeral tunnel that gets a
+      new hostname on restart, so we keep the provider pointed at the current one
+      automatically — this is just the status and a manual re-sync.
+    </p>
+
+    <% if @public_url.present? %>
+      <p class="kv"><span>Public URL</span><code><%= @public_url %></code></p>
+      <p class="kv"><span>Configured route</span><code><%= masked_webhook_url(@phone_number.webhook_url).presence || "—" %></code></p>
+      <p>
+        <% if @phone_number.webhook_in_sync?(@expected_webhook) %>
+          <span class="badge ok">In sync</span>
+        <% else %>
+          <span class="badge warn">Out of sync</span>
+        <% end %>
+      </p>
+    <% else %>
+      <p><span class="badge warn">No public URL yet</span></p>
+      <p class="muted small">Is the <code>cloudflared</code> container running? It can take a few seconds after boot.</p>
+    <% end %>
+
+    <% if @sync && !@sync.ok? && @sync.status != :skip %>
+      <p class="muted small"><%= @sync.message %></p>
+    <% end %>
+
+    <%= button_to "Re-sync", sync_webhook_path, method: :post, class: "btn small ghost" %>
+  </section>
+</div>

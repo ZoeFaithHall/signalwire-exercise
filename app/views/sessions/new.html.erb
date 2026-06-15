@@ -1,0 +1,12 @@
+<% content_for :title, "Sign in" %>
+
+<div class="card narrow">
+  <h1>Sign in</h1>
+  <p class="muted">Enter the dashboard password to manage your phone line.</p>
+
+  <%= form_with url: login_path, method: :post do %>
+    <label for="password">Password</label>
+    <%= password_field_tag :password, nil, id: "password", autofocus: true, class: "input" %>
+    <%= submit_tag "Sign in", class: "btn" %>
+  <% end %>
+</div>
