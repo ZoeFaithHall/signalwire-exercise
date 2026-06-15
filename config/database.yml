@@ -1,0 +1,24 @@
+# PostgreSQL configuration.
+#
+# Connection settings are read from environment variables so the same config
+# works locally and inside Docker Compose. See docker-compose.yml and .env.example.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("POSTGRES_HOST", "db") %>
+  port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
+  username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD", "postgres") %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_DB", "app_development") %>
+
+test:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_DB_TEST", "app_test") %>
+
+production:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_DB", "app_production") %>

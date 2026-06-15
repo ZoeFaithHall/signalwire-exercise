@@ -1,0 +1,58 @@
+name: switchboard
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app_development}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RAILS_ENV: development
+      POSTGRES_HOST: db
+      CLOUDFLARED_LOG: /cloudflared/cloudflared.log
+    ports:
+      # Override the host port if 3000 is taken: WEB_PORT=3010 docker compose up
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - cloudflared-logs:/cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/up || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Free public URL (no account/token) so SignalWire can reach the webhook.
+  # cloudflared writes its assigned *.trycloudflare.com URL to the shared log,
+  # which the app reads (see app/services/public_url.rb).
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    user: root
+    command: tunnel --no-autoupdate --url http://web:3000 --logfile /cloudflared/cloudflared.log --loglevel info
+    volumes:
+      - cloudflared-logs:/cloudflared
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  cloudflared-logs:
