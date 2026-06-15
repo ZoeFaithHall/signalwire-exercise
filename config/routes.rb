@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   # Customer dashboard + the forwarding control it owns.
   get   "dashboard",            to: "dashboard#show",      as: :dashboard
   patch "forwarding",           to: "forwarding#update",   as: :forwarding
+  patch "business_hours",       to: "business_hours#update", as: :business_hours
 
   # Admin view: telephony plumbing (inbound-route sync, number management).
   get   "admin",                to: "admin#show",          as: :admin

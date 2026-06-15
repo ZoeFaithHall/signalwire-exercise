@@ -1,9 +1,25 @@
 <% content_for :title, "Dashboard" %>
 
+<% now = Time.current
+   open_now = account.business_hours?(now)
+   destination = account.destination_for(now) %>
+
 <div class="grid">
   <section class="card">
     <h2>Your line</h2>
     <div class="bignum mono"><%= @phone_number.e164 %></div>
+
+    <p>
+      <% if open_now %>
+        <span class="badge ok">Business hours</span>
+      <% else %>
+        <span class="badge warn">After hours</span>
+      <% end %>
+      <span class="muted small">
+        Calls right now ring
+        <strong class="mono"><%= destination.presence || "no one — set a number below" %></strong>
+      </span>
+    </p>
 
     <%= form_with url: forwarding_path, method: :patch, class: "inline-form" do %>
       <label for="forwarding_number">Forwards to</label>
@@ -12,6 +28,47 @@
       <%= submit_tag "Update", class: "btn small" %>
     <% end %>
     <p class="muted small">Changing this takes effect immediately.</p>
+  </section>
+
+  <section class="card">
+    <h2>After-hours routing</h2>
+    <p class="muted small">
+      Send calls to a different number outside business hours. Leave the hours
+      blank to forward everything to your primary number around the clock.
+    </p>
+
+    <%= form_with url: business_hours_path, method: :patch do %>
+      <div class="inline-form">
+        <div>
+          <label for="business_hours_start">Open</label>
+          <%= time_field_tag :business_hours_start,
+                account.business_hours_start&.strftime("%H:%M"),
+                id: "business_hours_start", class: "input small" %>
+        </div>
+        <div>
+          <label for="business_hours_end">Close</label>
+          <%= time_field_tag :business_hours_end,
+                account.business_hours_end&.strftime("%H:%M"),
+                id: "business_hours_end", class: "input small" %>
+        </div>
+      </div>
+
+      <label for="overnight_number">After-hours number</label>
+      <%= telephone_field_tag :overnight_number, account.overnight_number,
+            id: "overnight_number", placeholder: "+15559876543", class: "input" %>
+
+      <label for="timezone">Time zone</label>
+      <%= text_field_tag :timezone, account.timezone,
+            id: "timezone", placeholder: "America/New_York", class: "input" %>
+
+      <label class="small" style="font-weight:400; margin-top:12px;">
+        <%= hidden_field_tag :weekend_business_hours, "0" %>
+        <%= check_box_tag :weekend_business_hours, "1", account.weekend_business_hours %>
+        Treat weekends as business hours
+      </label>
+
+      <%= submit_tag "Save routing", class: "btn small" %>
+    <% end %>
   </section>
 
   <section class="card wide">
