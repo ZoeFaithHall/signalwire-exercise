@@ -18,10 +18,12 @@ class CallsController < ApplicationController
     from = normalize_number(params.dig(:call, :from).presence || params[:from])
     to   = normalize_number(params.dig(:call, :to).presence   || params[:to])
 
-    forwarding = account.forwarding_number
-    swml = forwarding.present? ? Swml.forward(to: forwarding) : Swml.unconfigured
+    # Ask the account where this call should go *right now*. The business-hours
+    # decision lives on the model; the controller just routes to its answer.
+    destination = account.destination_for(Time.current)
+    swml = destination.present? ? Swml.forward(to: destination) : Swml.unconfigured
 
-    log_call(from: from, to: to, forwarding: forwarding)
+    log_call(from: from, to: to, forwarding: destination)
 
     render json: swml
   end

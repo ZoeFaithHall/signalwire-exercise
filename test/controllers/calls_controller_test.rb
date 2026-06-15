@@ -74,4 +74,48 @@ class CallsControllerTest < ActionDispatch::IntegrationTest
       Rails.application.routes.recognize_path("/calls/inbound", method: :get)
     end
   end
+
+  test "routes to the overnight number after hours" do
+    # Hours: weekdays 9-17 Eastern, overnight number set. Pick a time the test
+    # controls by freezing the clock to 22:00 Eastern on a weekday — squarely
+    # after hours — so the routing decision is deterministic regardless of when
+    # the suite runs.
+    Account.instance.update!(
+      forwarding_number:    "+15551230000",
+      overnight_number:     "+15559990000",
+      timezone:             "America/New_York",
+      business_hours_start: "09:00",
+      business_hours_end:   "17:00",
+      onboarded_at:         Time.current
+    )
+
+    after_hours = Time.use_zone("America/New_York") { Time.zone.local(2026, 6, 16, 22, 0) }
+    travel_to(after_hours) do
+      post_inbound(params: { call: { from: "+15557654321", to: "+15551112222" } })
+    end
+
+    assert_response :success
+    connect = response.parsed_body.dig("sections", "main", 0, "connect")
+    assert_equal "+15559990000", connect["to"]
+  end
+
+  test "routes to the primary number during business hours" do
+    Account.instance.update!(
+      forwarding_number:    "+15551230000",
+      overnight_number:     "+15559990000",
+      timezone:             "America/New_York",
+      business_hours_start: "09:00",
+      business_hours_end:   "17:00",
+      onboarded_at:         Time.current
+    )
+
+    business_hours = Time.use_zone("America/New_York") { Time.zone.local(2026, 6, 16, 12, 0) }
+    travel_to(business_hours) do
+      post_inbound(params: { call: { from: "+15557654321", to: "+15551112222" } })
+    end
+
+    assert_response :success
+    connect = response.parsed_body.dig("sections", "main", 0, "connect")
+    assert_equal "+15551230000", connect["to"]
+  end
 end
